@@ -519,6 +519,7 @@
 				BFE665321F17BD200041C167 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		BFE665331F17BD200041C167 /* Build configuration list for PBXNativeTarget "Jr beeTests" */ = {
 			isa = XCConfigurationList;
@@ -527,6 +528,7 @@
 				BFE665351F17BD200041C167 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		BFE665361F17BD200041C167 /* Build configuration list for PBXNativeTarget "Jr beeUITests" */ = {
 			isa = XCConfigurationList;
@@ -535,6 +537,7 @@
 				BFE665381F17BD200041C167 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
