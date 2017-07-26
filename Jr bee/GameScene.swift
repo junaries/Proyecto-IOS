@@ -215,7 +215,7 @@ class GameScene: SKScene {
         //print(5)
         //print(abejita)
         abejita.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
-        abejita.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 80))
+        abejita.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 20))
        
         
     }
