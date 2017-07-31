@@ -9,7 +9,7 @@
 import SpriteKit
 
 
-class GameScene: SKScene {
+class GameScene: SKScene, SKPhysicsContactDelegate {
     // creo mi variable global de la abeja
     var separacionEnemigos = 150.0
     var abejita = SKSpriteNode() // Un elemento de SK
@@ -18,13 +18,35 @@ class GameScene: SKScene {
     var texturaPlantaFea = SKTexture()
     var texturaAvispa = SKTexture()
     var repeticion = SKAction()
+    // creo un nuevo nodo, que será el letrero "peligro-No tocar"
+    var peligro = SKSpriteNode()
+    // creo la textura del cartel de peligro
+    let texturaPeligro = SKTexture(imageNamed: "peligro")
+    
+    let categoriaAbeja : UInt32 = 1 << 0
+    let categoriaPeligro : UInt32 = 1 << 1
+    let categoriaEnemigos : UInt32 = 1 << 2
+    let categoriaSuelo : UInt32 = 1 << 3
+    let categoriaPuntua : UInt32 = 1 << 4
+    
+    let movimientoDelConjunto = SKNode() // Este nodo, será el encargado de representar a cada uno de los elementos que tienen movimiento en la app como el suelo, la plantaFea y la avispa
+    var reiniciar = false // variable para definir el reinicio o reseteo del juego
+    // He probado que hay una mala gestion de las plantasFeas y las avispas, en un momento dado se llegan a solapar entre ellos, quedando un aspecto visual muy horrible, con lo cual tengo que gestionar dichos elementos para evitar dicho efecto no deseado
+    var gestionDeEnemigos = SKNode()
+    // En todo juego tiene que haber una puntuación, con lo cual:
+    var puntuacion = NSInteger()
+    var etiqueta_puntuacion = SKLabelNode()
+ 
     
     
-   
     /* Esto se ejecuta cuando se lanza la aplicación */
     override func didMove(to view: SKView) {
+        // añado ese nodo "movimientoDelConjunto" a la aplicación
+        self.addChild(movimientoDelConjunto)
+        movimientoDelConjunto.addChild(gestionDeEnemigos)
         // Voy a crear gravedad en los objetos de este juego
         self.physicsWorld.gravity = CGVector(dx: 0.0, dy: -5.0)
+        self.physicsWorld.contactDelegate = self // la propia aplicación va a controlar los contactos o choques
         
         // Asigno mediante el formato RGB el color de fondo de mi aplicación
         let colorCielo = SKColor(red: 164/255, green: 235/255, blue: 237/255, alpha: 1)
@@ -48,7 +70,7 @@ class GameScene: SKScene {
         abejita = SKSpriteNode.init(texture: imagenAbeja)
         
         // Ahora me encargo de la posicion de la abejita en la pantalla
-        abejita.position = CGPoint(x: self.frame.size.width / 40.0 - 280, y: self.frame.midY)
+        abejita.position = CGPoint(x: self.frame.size.width / 40.0 - 40, y: self.frame.midY)
         
         // Lanzo el aleteo de la abeja:
         abejita.run(vuelo)
@@ -58,6 +80,12 @@ class GameScene: SKScene {
         abejita.physicsBody?.isDynamic = true
         // A la abejita no se le va a permitir rotar
         abejita.physicsBody?.allowsRotation = false
+        // Asigno la categoria de la abejita
+        abejita.physicsBody?.categoryBitMask = categoriaAbeja
+        // Defino las colisiones que va a tener
+        abejita.physicsBody?.collisionBitMask = categoriaPeligro | categoriaEnemigos | categoriaSuelo
+        // Testeo dichas colisiones
+        abejita.physicsBody?.contactTestBitMask = categoriaPeligro | categoriaEnemigos | categoriaSuelo
         // Muestro (añado) la abejita en pantalla de la aplicación
         self.addChild(abejita)
         //Creo la textura del sol
@@ -70,6 +98,22 @@ class GameScene: SKScene {
         sol.position = CGPoint(x: self.frame.size.width / 40.0 + 295, y: self.frame.midY + 500)
         sol.zPosition = -120
         self.addChild(sol)
+        
+        //Creo un filtro para que quede OK la imagen "peligro"
+        texturaPeligro.filteringMode = SKTextureFilteringMode.nearest
+        //Como siempre, asocio la textura(imagen) con su respectivo elemento
+        peligro = SKSpriteNode.init(texture: texturaPeligro)
+        //Lo posiciono en la pantalla de mi aplicación
+        peligro.position = CGPoint(x: self.frame.size.width / 40.0 - 390 , y: self.frame.midY + 210)
+        peligro.physicsBody = SKPhysicsBody(rectangleOf: peligro.size )
+        peligro.physicsBody?.isDynamic = false
+        peligro.physicsBody?.categoryBitMask = categoriaPeligro
+        peligro.physicsBody?.contactTestBitMask = categoriaAbeja
+
+        // lo añado en la pantalla
+        self.addChild(peligro)
+        
+        
         
         
         // Ahora creo la textura del cielo, textura es lo mismo que decir imagen
@@ -100,12 +144,12 @@ class GameScene: SKScene {
             // Recordemos que hay una tercera coordenada, la cual nos va a servir de cuan atras, va a estar esta imagen respecto de las otras imagenes
             franja_imagen.zPosition = -5 // Quiero que mi imagen del cielo, sea una imagen de fondo, por eso lo del signo negativo
             //Posiciono cada una de las franjas (trozos) de la imagen del cielo (cieloDefinitivo)
-            franja_imagen.position = CGPoint(x: -330 + i*franja_imagen.size.width, y: franja_imagen.size.height - 365)
+            franja_imagen.position = CGPoint(x: -330 + i*franja_imagen.size.width, y: franja_imagen.size.height - 307)
             // ejecuto esa animacion constante en cada franja
             franja_imagen.run(movimientoConstanteFlores)
             
             // Añado a la pantalla de mi aplicacion cada franja de la imagen del cielo (imagen cieloDefinitivo.png)
-            self.addChild(franja_imagen)
+            movimientoDelConjunto.addChild(franja_imagen)
             
         }
 
@@ -120,7 +164,7 @@ class GameScene: SKScene {
             // ejecuto esa animacion constante en cada franja
            franja_imagen.run(movimientoConstanteCielo)
             // Añado a la pantalla de mi aplicacion cada franja de la imagen del cielo (imagen cieloDefinitivo.png)
-            self.addChild(franja_imagen)
+            movimientoDelConjunto.addChild(franja_imagen)
             
         }
         
@@ -143,7 +187,7 @@ class GameScene: SKScene {
             // ejecuto esa animacion constante en cada franja
             //franja_imagen.run(movimientoConstanteSuelo)
             // Añado a la pantalla de mi aplicacion cada franja de la imagen del suelo (imagen sueloJR.png)
-            self.addChild(franja_imagen)
+            movimientoDelConjunto.addChild(franja_imagen)
             
         }
         //Creo un tope o limite para el suelo, para que al caer la abejita, ésta no se "desaparezca" de la aplicación
@@ -151,7 +195,8 @@ class GameScene: SKScene {
         limiteSuelo.position = CGPoint(x: -400, y: texturaSuelo.size().height - 890)
         limiteSuelo.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: self.frame.size.width, height: texturaSuelo.size().height))
         limiteSuelo.physicsBody?.isDynamic = false
-        self.addChild(limiteSuelo)
+        limiteSuelo.physicsBody?.categoryBitMask = categoriaSuelo
+        movimientoDelConjunto.addChild(limiteSuelo)
         
         // Asocio esas variables a sus respectivas imágenes
         texturaPlantaFea = SKTexture(imageNamed: "plantaFea")
@@ -172,6 +217,16 @@ class GameScene: SKScene {
         var crearClonesEnemigosSiguientes = SKAction.sequence([crearClonesEnemigos, tiempoEntreEnemigos])
         var crearParaSiempreClones = SKAction.repeatForever(crearClonesEnemigosSiguientes)
         self.run(crearParaSiempreClones)
+        puntuacion = 0
+        etiqueta_puntuacion.text = "Vamos! \(puntuacion)"
+        etiqueta_puntuacion.fontName = "Times New Roman"
+        etiqueta_puntuacion.fontSize = 100
+        
+        etiqueta_puntuacion.alpha = 0.4
+        etiqueta_puntuacion.fontColor = UIColor.darkText
+        etiqueta_puntuacion.zPosition = 0
+        etiqueta_puntuacion.position = CGPoint(x: self.frame.size.width/40.0 - 156, y: self.frame.midY - 300 + 900 - 500 + 200)
+        self.addChild(etiqueta_puntuacion)
         
         
     }
@@ -186,27 +241,54 @@ class GameScene: SKScene {
         let ordenada = UInt(arc4random()) % altura
         
         let planta = SKSpriteNode(texture: texturaPlantaFea)
-        planta.position = CGPoint(x: -100 , y: CGFloat(ordenada) - 250)
-        //planta.physicsBody = SKPhysicsBody(rectangleOf: planta.size )
+        planta.position = CGPoint(x: -50 , y: CGFloat(ordenada) - 150)
+        planta.physicsBody = SKPhysicsBody(texture: texturaPlantaFea, size: planta.size)
         planta.physicsBody?.isDynamic = false
+        planta.physicsBody?.categoryBitMask = categoriaEnemigos
+        planta.physicsBody?.contactTestBitMask = categoriaAbeja
         
         conjuntoEnemigo.addChild(planta)
         
         // lo mismo pero para la avispa
         
         let avispaMala = SKSpriteNode(texture: texturaAvispa)
-        avispaMala.position = CGPoint(x: -90, y: CGFloat(ordenada) + planta.size.height + CGFloat(separacionEnemigos))
-        //avispaMala.physicsBody = SKPhysicsBody(rectangleOf: avispaMala.size )
+        avispaMala.position = CGPoint(x: 290, y: CGFloat(ordenada) + planta.size.height + CGFloat(separacionEnemigos) - 340)
+        avispaMala.physicsBody = SKPhysicsBody(texture: texturaAvispa, size: avispaMala.size)
         avispaMala.physicsBody?.isDynamic = false
+        avispaMala.physicsBody?.categoryBitMask = categoriaEnemigos
+        avispaMala.physicsBody?.contactTestBitMask = categoriaAbeja
         
         conjuntoEnemigo.addChild(avispaMala)
+        var elQuePuntua = SKNode()
+        elQuePuntua.position = CGPoint(x: planta.size.width + abejita.size.width/2, y: self.frame.midY)
+        elQuePuntua.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: planta.size.width, height: self.frame.size.height))
+        elQuePuntua.physicsBody?.isDynamic = false
+        elQuePuntua.physicsBody?.categoryBitMask = categoriaPuntua
+        elQuePuntua.physicsBody?.contactTestBitMask = categoriaAbeja
+        conjuntoEnemigo.addChild(elQuePuntua)
+        
         conjuntoEnemigo.run(repeticion)
         
-        self.addChild(conjuntoEnemigo)
-
+        gestionDeEnemigos.addChild(conjuntoEnemigo)
+        
         
     }
-    
+    func DeNuevoEscenario(){
+        
+        abejita.position = CGPoint(x: self.frame.size.width / 40.0 - 40, y: self.frame.midY)
+        abejita.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
+        abejita.speed = 0
+        reiniciar = false
+        movimientoDelConjunto.speed = 1
+        abejita.speed = 1
+        self.backgroundColor = SKColor(red: 164/255, green: 235/255, blue: 237/255, alpha: 1)
+        gestionDeEnemigos.removeAllChildren()
+        
+        puntuacion = 0
+        etiqueta_puntuacion.text = "Vamos! \(puntuacion)"
+        
+        
+    }
     
     // Esta función se ejecuta cuando se hacen toques en la pantalla
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -214,9 +296,14 @@ class GameScene: SKScene {
         // Le aplico un impulso a la abejita
         //print(5)
         //print(abejita)
+        if movimientoDelConjunto.speed > 0 {
         abejita.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
-        abejita.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 20))
-       
+        abejita.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 60))
+        }
+        
+        else if reiniciar == true {
+            self.DeNuevoEscenario()
+        }
         
     }
     
@@ -225,5 +312,29 @@ class GameScene: SKScene {
     override func update(_ currentTime: TimeInterval) {
        
         
+    }
+    func didBegin(_ contact: SKPhysicsContact) {
+        if movimientoDelConjunto.speed > 0 {
+            if ((contact.bodyA.categoryBitMask & categoriaPuntua) == categoriaPuntua || (contact.bodyB.categoryBitMask & categoriaPuntua) == categoriaPuntua) {
+                puntuacion = puntuacion + 1
+                etiqueta_puntuacion.text = "\(puntuacion)"
+            }
+            else{
+                movimientoDelConjunto.speed = 0
+                
+                let reinicioJuego = SKAction.run({() in self.ReiniciarJuego()})
+                
+                let cambiarColorCielo = SKAction.run({() in self.CieloRojo()})
+                // la accion de cambiar el color del cielo y el reinicio tiene que ir de la mano:
+                var colorCielo_reinicio = SKAction.group([cambiarColorCielo, reinicioJuego])
+                self.run(colorCielo_reinicio)
+            }
+        }
+    }
+    func CieloRojo(){
+        self.backgroundColor = UIColor.red
+    }
+    func ReiniciarJuego(){
+        reiniciar = true
     }
 }
