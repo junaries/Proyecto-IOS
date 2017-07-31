@@ -298,7 +298,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         //print(abejita)
         if movimientoDelConjunto.speed > 0 {
         abejita.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
-        abejita.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 60))
+        abejita.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 30))
         }
         
         else if reiniciar == true {
